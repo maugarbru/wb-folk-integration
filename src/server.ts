@@ -1,11 +1,21 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
 
+const ALLOWED_DOMAINS = ["celerik-staging.webflow.io", "go.celerik.com", "celerik.com"];
+
+app.use(cors({
+  origin: ALLOWED_DOMAINS,
+  methods: ["POST", "GET"],
+  allowedHeaders: ["Content-Type"],
+}));
+
 // Endpoint: Newsletter (solo email)
 app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
   const { email } = req.body;
+  console.log("Received newsletter signup:", req.body);
   if (!email) return res.status(400).json({ error: "Email is required" });
 
   try {
@@ -33,6 +43,7 @@ app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
 // Endpoint: Contact form (completo)
 app.post("/api/folk/contact", async (req: Request, res: Response) => {
   const { name, email, company, role, country, project } = req.body;
+  console.log("Received contact form data:", req.body);
   if (!name || !email) return res.status(400).json({ error: "Name and email are required" });
 
   try {

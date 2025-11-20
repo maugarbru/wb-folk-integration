@@ -12,7 +12,7 @@
  * - Fires a POST to your proxy endpoints to create a person in Folk.
  */
 (function() {
-  const PROXY_BASE_URL = "https://YOUR-PROXY-URL.com"; // <-- CHANGE this
+  const PROXY_BASE_URL = "https://wb-folk-integration.vercel.app"; // <-- CHANGE this
 
   function safeQuery(form, selectors) {
     for (const s of selectors) {
@@ -63,7 +63,7 @@
   }
 
   // Contact form (full)
-  const contactForm = document.querySelector("#wf-form-ContactForm");
+  const contactForm = document.querySelector("#wf-form-BookCall");
   if (contactForm) {
     contactForm.addEventListener("submit", function() {
       try {
@@ -93,6 +93,6 @@
       }
     });
   } else {
-    console.warn("Contact form (#wf-form-ContactForm) not found on page.");
+    console.warn("Contact form (#wf-form-BookCall) not found on page.");
   }
 })();
