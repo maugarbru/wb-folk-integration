@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 
 import {
@@ -12,28 +11,25 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(new Error("CORS: Requests sin Origin no permitidos"), false);
-      }
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-      if (ALLOWED_DOMAINS.includes(origin)) {
-        return callback(null, true);
-      }
+  if (origin && ALLOWED_DOMAINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
-      return callback(new Error("CORS: Origin no permitido: " + origin), false);
-    },
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-  })
-);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
 
-app.options("*", cors());
+  // Manejar OPTIONS al toque
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  next();
+});
+
 
 // Endpoint: Newsletter (solo email)
 app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
