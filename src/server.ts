@@ -15,26 +15,25 @@ app.use(express.json());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Permite requests sin origin (ej: Postman, servidores)
-      // if (!origin) return callback(null, true);
-
-      // // ❌ Bloquear cualquier request sin 'origin'
       if (!origin) {
         return callback(new Error("CORS: Requests sin Origin no permitidos"), false);
       }
 
-      // ✔️ Permitir solo dominios autorizados
       if (ALLOWED_DOMAINS.includes(origin)) {
         return callback(null, true);
       }
 
-      // ❌ Rechazar peticiones desde otros sitios
-      return callback(new Error("CORS: Origin no permitido"), false);
+      return callback(new Error("CORS: Origin no permitido: " + origin), false);
     },
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
+
+app.options("*", cors());
 
 // Endpoint: Newsletter (solo email)
 app.post("/api/folk/newsletter", async (req: Request, res: Response) => {

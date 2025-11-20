@@ -1,0 +1,88 @@
+<script>
+// --- Helper: esperar a que Webflow cargue completamente ---
+function onWebflowReady(callback) {
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    requestAnimationFrame(callback);
+  } else {
+    document.addEventListener("DOMContentLoaded", callback);
+  }
+}
+
+onWebflowReady(() => {
+  console.log("🚀 Webflow custom script iniciado");
+
+  const PROXY_BASE_URL = "https://wb-folk-integration.vercel.app"; // <- CAMBIA ESTO
+
+  // --- Formularios Webflow ---
+  const newsletterForm = document.querySelector('form[data-name="SuscribeEdgeForm"]');
+  const contactForm = document.querySelector('form[data-name="ContactEdgeForm"]'); // el nombre que tú tengas
+
+  // --- Validación ---
+  if (!newsletterForm) console.warn("⚠️ No se encontró el formulario Newsletter");
+  if (!contactForm) console.warn("⚠️ No se encontró el formulario Contact");
+
+  // ============ NEWSLETTER FORM ============
+  if (newsletterForm) {
+    newsletterForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      console.log("📨 Enviando newsletter...");
+
+      const email = newsletterForm.querySelector("input[name='email']")?.value;
+
+      if (!email) {
+        console.error("❌ No se encontró el input de email");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${PROXY_BASE_URL}/folk/newsletter`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        if (!res.ok) throw new Error("Error en proxy");
+
+        console.log("✅ Newsletter enviado a FOLK");
+
+        // Dejar que Webflow muestre su success state
+        newsletterForm.submit();
+      } catch (err) {
+        console.error("❌ Error enviando newsletter", err);
+        newsletterForm.querySelector(".w-form-fail")?.classList.add("w--show");
+      }
+    });
+  }
+
+  // ============ CONTACT FORM (más campos) ============
+  if (contactForm) {
+    contactForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      console.log("📨 Enviando contacto...");
+
+      const formData = new FormData(contactForm);
+      const payload = Object.fromEntries(formData.entries());
+
+      console.log("📝 Payload contacto:", payload);
+
+      try {
+        const res = await fetch(`${PROXY_BASE_URL}/folk/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error("Error en proxy");
+
+        console.log("✅ Contacto enviado a FOLK");
+
+        contactForm.submit();
+      } catch (err) {
+        console.error("❌ Error enviando contacto", err);
+        contactForm.querySelector(".w-form-fail")?.classList.add("w--show");
+      }
+    });
+  }
+
+});
+</script>
