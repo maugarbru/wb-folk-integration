@@ -1,16 +1,37 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 
+import {
+  ALLOWED_DOMAINS,
+  NEWSLETTER_GROUP_ID,
+  CONTACT_FORM_GROUP_ID,
+} from "./constants";
+
+dotenv.config();
 const app = express();
 app.use(express.json());
 
-const ALLOWED_DOMAINS = ["celerik-staging.webflow.io", "go.celerik.com", "celerik.com"];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // ❌ Bloquear cualquier request sin 'origin'
+      if (!origin) {
+        return callback(new Error("CORS: Requests sin Origin no permitidos"), false);
+      }
 
-app.use(cors({
-  origin: ALLOWED_DOMAINS,
-  methods: ["POST", "GET"],
-  allowedHeaders: ["Content-Type"],
-}));
+      // ✔️ Permitir solo dominios autorizados
+      if (ALLOWED_DOMAINS.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // ❌ Rechazar peticiones desde otros sitios
+      return callback(new Error("CORS: Origin no permitido"), false);
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 
 // Endpoint: Newsletter (solo email)
 app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
@@ -28,7 +49,12 @@ app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
       body: JSON.stringify({
         fullName: email.split("@")[0],
         emails: [email],
-        tags: ["newsletter"]
+        tags: ["website"],
+        groups: [
+          {
+            id: NEWSLETTER_GROUP_ID,
+          },
+        ],
       }),
     });
 
@@ -44,7 +70,8 @@ app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
 app.post("/api/folk/contact", async (req: Request, res: Response) => {
   const { name, email, company, role, country, project } = req.body;
   console.log("Received contact form data:", req.body);
-  if (!name || !email) return res.status(400).json({ error: "Name and email are required" });
+  if (!name || !email)
+    return res.status(400).json({ error: "Name and email are required" });
 
   try {
     const response = await fetch("https://api.folk.app/v1/people", {
@@ -60,7 +87,12 @@ app.post("/api/folk/contact", async (req: Request, res: Response) => {
         jobTitle: role,
         location: country,
         notes: project,
-        tags: ["contact-form"]
+        tags: ["website"],
+        groups: [
+          {
+            id: CONTACT_FORM_GROUP_ID,
+          },
+        ],
       }),
     });
 
@@ -72,7 +104,9 @@ app.post("/api/folk/contact", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/", (_req: Request, res: Response) => res.send("Folk proxy API running (TypeScript)."));
+app.get("/", (_req: Request, res: Response) =>
+  res.send("Folk proxy API running (TypeScript).")
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running at port ${PORT}`));
