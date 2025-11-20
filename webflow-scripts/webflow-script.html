@@ -35,7 +35,7 @@ onWebflowReady(() => {
       }
 
       try {
-        const res = await fetch(`${PROXY_BASE_URL}/folk/newsletter`, {
+        const res = await fetch(`${PROXY_BASE_URL}/api/folk/newsletter`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
@@ -66,7 +66,7 @@ onWebflowReady(() => {
       console.log("📝 Payload contacto:", payload);
 
       try {
-        const res = await fetch(`${PROXY_BASE_URL}/folk/contact`, {
+        const res = await fetch(`${PROXY_BASE_URL}/api/folk/contact`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
