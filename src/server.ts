@@ -15,7 +15,10 @@ app.use(express.json());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // ❌ Bloquear cualquier request sin 'origin'
+      // Permite requests sin origin (ej: Postman, servidores)
+      // if (!origin) return callback(null, true);
+
+      // // ❌ Bloquear cualquier request sin 'origin'
       if (!origin) {
         return callback(new Error("CORS: Requests sin Origin no permitidos"), false);
       }
@@ -29,7 +32,7 @@ app.use(
       return callback(new Error("CORS: Origin no permitido"), false);
     },
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -49,7 +52,7 @@ app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
       body: JSON.stringify({
         fullName: email.split("@")[0],
         emails: [email],
-        tags: ["website"],
+        description: "website newsletter signup",
         groups: [
           {
             id: NEWSLETTER_GROUP_ID,
@@ -83,16 +86,19 @@ app.post("/api/folk/contact", async (req: Request, res: Response) => {
       body: JSON.stringify({
         fullName: name,
         emails: [email],
-        company,
         jobTitle: role,
-        location: country,
-        notes: project,
-        tags: ["website"],
+        description: project,
         groups: [
           {
             id: CONTACT_FORM_GROUP_ID,
           },
         ],
+        customFieldValues: {
+          [CONTACT_FORM_GROUP_ID]: {
+            "Company Name": company,
+            Location: country,
+          },
+        },
       }),
     });
 
