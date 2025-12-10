@@ -14,7 +14,6 @@
 </div>
 
 <style>
-  /* Container */
   .cookie-banner {
     position: fixed;
     bottom: 24px;
@@ -34,6 +33,11 @@
   .cookie-banner.visible {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   h3 {
@@ -86,43 +90,97 @@
 </style>
 
 <script>
-  // Show banner on every page load (no localStorage)
+  const CONSENT_KEY = "cookie_consent_status";
+  const EXPIRATION_MS = 24 * 60 * 60 * 1000; // 1 day
+
+  function getStoredConsent() {
+    const stored = localStorage.getItem(CONSENT_KEY);
+    if (!stored) return null;
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (Date.now() > parsed.expireAt) {
+        localStorage.removeItem(CONSENT_KEY);
+        console.log("[Cookie Consent] Stored consent expired.");
+        return null;
+      }
+      return parsed.value;
+    } catch {
+      return null;
+    }
+  }
+
+  function storeConsent(value) {
+    localStorage.setItem(
+      CONSENT_KEY,
+      JSON.stringify({
+        value,
+        expireAt: Date.now() + EXPIRATION_MS,
+      })
+    );
+  }
+
+  function applyClarityConsent(granted) {
+    console.log("[Clarity] Applying consentV2:", granted);
+
+    const payload = {
+      analytics_Storage: granted ? "granted" : "denied",
+    };
+
+    // Retry until clarity() is ready
+    let tries = 0;
+    const timer = setInterval(() => {
+      if (window.clarity) {
+        clarity("consentv2", payload);
+        console.log("[Clarity] consentv2 sent:", payload);
+        clearInterval(timer);
+      } else if (tries++ > 20) {
+        clearInterval(timer);
+        console.warn("[Clarity] clarity() not found after retries.");
+      }
+    }, 200);
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     const banner = document.getElementById("cookie-banner");
-    banner.classList.add("visible");
-    console.log("[Cookie Consent] Banner displayed.");
+    const storedConsent = getStoredConsent();
+
+    if (!storedConsent) {
+      banner.classList.add("visible");
+      console.log("[Cookie Consent] Banner displayed.");
+    } else {
+      applyClarityConsent(storedConsent === "granted");
+      console.log("[Cookie Consent] Using stored consent:", storedConsent);
+    }
+
+    document
+      .getElementById("cookie-accept")
+      .addEventListener("click", function () {
+        console.log("[Cookie Consent] User accepted analytics cookies.");
+
+        storeConsent("granted");
+        applyClarityConsent(true);
+
+        fadeOutBanner();
+      });
+
+    document
+      .getElementById("cookie-reject")
+      .addEventListener("click", function () {
+        console.log("[Cookie Consent] User rejected analytics cookies.");
+
+        storeConsent("denied");
+        applyClarityConsent(false);
+
+        fadeOutBanner();
+      });
   });
-
-  // Accept button
-  document
-    .getElementById("cookie-accept")
-    .addEventListener("click", function () {
-      console.log("[Cookie Consent] User accepted analytics cookies.");
-
-      clarity("consent"); // Enables analytics tracking
-      console.log("[Clarity] Consent granted.");
-
-      fadeOutBanner();
-    });
-
-  // Reject button
-  document
-    .getElementById("cookie-reject")
-    .addEventListener("click", function () {
-      console.log("[Cookie Consent] User rejected analytics cookies.");
-
-      clarity("consent", false); // Rejects tracking
-      console.log("[Clarity] Consent rejected.");
-
-      fadeOutBanner();
-    });
 
   function fadeOutBanner() {
     const banner = document.getElementById("cookie-banner");
     banner.classList.remove("visible");
     banner.classList.add("hidden");
 
-    // Optional: fully remove after animation
     setTimeout(() => {
       banner.style.display = "none";
       console.log("[Cookie Consent] Banner closed.");
