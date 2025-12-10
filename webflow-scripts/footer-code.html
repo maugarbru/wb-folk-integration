@@ -1,0 +1,130 @@
+<!-- COOKIE BANNER -->
+<div id="cookie-banner" class="cookie-banner hidden">
+  <h3>Cookies</h3>
+  <p>
+    This site uses analytics cookies only. These cookies help us understand site
+    usage to improve our services.
+  </p>
+
+  <div class="cookie-buttons">
+    <button id="cookie-accept" class="accept-btn">Accept</button>
+    <button id="cookie-reject" class="reject-btn">Reject</button>
+  </div>
+</div>
+
+<style>
+  /* Container */
+  .cookie-banner {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 320px;
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    font-family: system-ui, sans-serif;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 999999;
+  }
+
+  .cookie-banner.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #0f142b;
+  }
+
+  p {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  .cookie-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  .accept-btn,
+  .reject-btn {
+    width: 100%;
+    padding: 10px 0;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+
+  .accept-btn {
+    background: #214ded;
+    border: 2px solid #fff;
+    color: #fff;
+  }
+
+  .reject-btn {
+    background: #fff;
+    border: 2px solid #000;
+    color: #000;
+  }
+</style>
+
+<script>
+  // Show banner on every page load (no localStorage)
+  document.addEventListener("DOMContentLoaded", function () {
+    const banner = document.getElementById("cookie-banner");
+    banner.classList.add("visible");
+    console.log("[Cookie Consent] Banner displayed.");
+  });
+
+  // Accept button
+  document
+    .getElementById("cookie-accept")
+    .addEventListener("click", function () {
+      console.log("[Cookie Consent] User accepted analytics cookies.");
+
+      clarity("consent"); // Enables analytics tracking
+      console.log("[Clarity] Consent granted.");
+
+      fadeOutBanner();
+    });
+
+  // Reject button
+  document
+    .getElementById("cookie-reject")
+    .addEventListener("click", function () {
+      console.log("[Cookie Consent] User rejected analytics cookies.");
+
+      clarity("consent", false); // Rejects tracking
+      console.log("[Clarity] Consent rejected.");
+
+      fadeOutBanner();
+    });
+
+  function fadeOutBanner() {
+    const banner = document.getElementById("cookie-banner");
+    banner.classList.remove("visible");
+    banner.classList.add("hidden");
+
+    // Optional: fully remove after animation
+    setTimeout(() => {
+      banner.style.display = "none";
+      console.log("[Cookie Consent] Banner closed.");
+    }, 400);
+  }
+</script>
