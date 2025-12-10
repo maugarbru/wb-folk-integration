@@ -1,5 +1,5 @@
 <script>
-// --- Helper: esperar a que Webflow cargue completamente ---
+// --- Esperar a que Webflow esté listo ---
 function onWebflowReady(callback) {
   if (document.readyState === "complete" || document.readyState === "interactive") {
     requestAnimationFrame(callback);
@@ -11,74 +11,115 @@ function onWebflowReady(callback) {
 onWebflowReady(() => {
   console.log("🚀 Webflow custom script iniciado");
 
-  const PROXY_BASE_URL = "https://wb-folk-integration.vercel.app"; // <- CAMBIA ESTO
+  const PROXY_BASE_URL = "https://wb-folk-integration.vercel.app"; 
+  const REDIRECT_URL = "https://outlook.office.com/bookwithme/user/4ad3a4c7802f4a0fa2d187eb587792d1@celerik.com/meetingtype/GbK9zDiqokWZVxJZ6X507w2?anonymous&ismsaljsauthenabled&ep=mlink";
 
-  // --- Formularios Webflow ---
+  // Selección de formularios
   const newsletterForm = document.querySelector('form[data-name="SuscribeEdgeForm"]');
-  const contactForm = document.querySelector('form[data-name="ContactEdgeForm"]'); // el nombre que tú tengas
+  const contactForm    = document.querySelector('form[data-name="BookCall"]');
 
-  // --- Validación ---
-  if (!newsletterForm) console.warn("⚠️ No se encontró el formulario Newsletter");
-  if (!contactForm) console.warn("⚠️ No se encontró el formulario Contact");
+  console.log("🔍 Formularios encontrados:", {
+    newsletterForm: !!newsletterForm,
+    contactForm: !!contactForm,
+  });
 
-  // ============ NEWSLETTER FORM ============
+  // ==========================================================
+  // NEWSLETTER FORM
+  // ==========================================================
   if (newsletterForm) {
+    console.log("📌 Newsletter form inicializado");
+
     newsletterForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      console.log("📨 Enviando newsletter...");
+      console.log("📨 [Newsletter] Enviando...");
 
-      const email = newsletterForm.querySelector("input[name='email']")?.value;
+      const emailInput = newsletterForm.querySelector("input[name='email']");
+      const email = emailInput?.value?.trim();
+
+      console.log("🔎 [Newsletter] Email capturado:", email);
 
       if (!email) {
-        console.error("❌ No se encontró el input de email");
+        console.error("❌ [Newsletter] Email vacío o no encontrado");
+        newsletterForm.querySelector(".w-form-fail")?.classList.add("w--show");
         return;
       }
 
       try {
+        console.log("🌐 [Newsletter] Enviando al proxy:", PROXY_BASE_URL + "/api/folk/newsletter");
+
         const res = await fetch(`${PROXY_BASE_URL}/api/folk/newsletter`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         });
 
-        if (!res.ok) throw new Error("Error en proxy");
+        console.log("📥 [Newsletter] Respuesta:", res.status);
 
-        console.log("✅ Newsletter enviado a FOLK");
+        if (!res.ok) throw new Error("Respuesta no OK del proxy");
 
-        // Dejar que Webflow muestre su success state
+        console.log("✅ [Newsletter] Envío exitoso → Webflow success-state");
         newsletterForm.submit();
+
       } catch (err) {
-        console.error("❌ Error enviando newsletter", err);
+        console.error("❌ [Newsletter] Error:", err);
         newsletterForm.querySelector(".w-form-fail")?.classList.add("w--show");
       }
     });
   }
 
-  // ============ CONTACT FORM (más campos) ============
+  // ==========================================================
+  // CONTACT FORM con redirección y mapeo de campos
+  // ==========================================================
   if (contactForm) {
+    console.log("📌 Contact form inicializado");
+
     contactForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      console.log("📨 Enviando contacto...");
+      console.log("📨 [Contact] Enviando información...");
 
+      // Captura de datos crudos
       const formData = new FormData(contactForm);
-      const payload = Object.fromEntries(formData.entries());
+      const rawPayload = Object.fromEntries(formData.entries());
 
-      console.log("📝 Payload contacto:", payload);
+      console.log("📝 [Contact] Payload capturado (raw):", rawPayload);
+
+      // ---- Mapeo a estructura que espera la API ----
+      const payload = {
+        name: rawPayload.name || "",
+        email: rawPayload.Email || "",
+        company: rawPayload.Company || "",
+        role: rawPayload.RoleTitle || "",
+        country: rawPayload.CountryTZ || "",
+        project: rawPayload.Description || "",
+      };
+
+      console.log("🔧 [Contact] Payload mapeado para API:", payload);
 
       try {
+        console.log("🌐 [Contact] Enviando al proxy:", PROXY_BASE_URL + "/api/folk/contact");
+
         const res = await fetch(`${PROXY_BASE_URL}/api/folk/contact`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
-        if (!res.ok) throw new Error("Error en proxy");
+        console.log("📥 [Contact] Respuesta:", res.status);
 
-        console.log("✅ Contacto enviado a FOLK");
+        if (!res.ok) throw new Error("Respuesta no OK del proxy");
 
+        console.log("✅ [Contact] Envío exitoso → Webflow success-state");
         contactForm.submit();
+
+        console.log("⏳ [Contact] Redireccionando en breve a:", REDIRECT_URL);
+
+        setTimeout(() => {
+          console.log("➡️ [Contact] Redirigiendo ahora...");
+          window.location.href = REDIRECT_URL;
+        }, 1000);
+
       } catch (err) {
-        console.error("❌ Error enviando contacto", err);
+        console.error("❌ [Contact] Error enviando:", err);
         contactForm.querySelector(".w-form-fail")?.classList.add("w--show");
       }
     });

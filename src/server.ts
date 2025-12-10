@@ -30,9 +30,6 @@ app.use((req, res, next) => {
   next();
 });
 
-console.log("Allowed domains:", ALLOWED_DOMAINS);
-console.log("FOLK_API_KEY exists?", !!process.env.FOLK_API_KEY);
-
 // Endpoint: Newsletter (solo email)
 app.post("/api/folk/newsletter", async (req: Request, res: Response) => {
   const { email } = req.body;
